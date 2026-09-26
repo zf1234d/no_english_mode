@@ -36,7 +36,9 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Build Release
-        run: cargo build --release
+        run: |
+          $env:RUSTFLAGS = "-C opt-level=z -C lto=fat -C codegen-units=1 -C strip=symbols"
+          cargo build --release
 
       - name: Verify Binary
         run: |
