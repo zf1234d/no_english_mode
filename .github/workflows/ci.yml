@@ -64,6 +64,17 @@ jobs:
           CARGO_PROFILE_RELEASE_STRIP: "symbols"
         run: cargo build --release
 
+      - name: Package
+        shell: pwsh
+        run: |
+          $dist = 'dist'
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Copy-Item 'target/release/no_english_mode.exe' $dist
+          Copy-Item 'assets/copy_to_startup.bat' $dist
+          Copy-Item 'README.md' $dist
+          $version = "${{ steps.version.outputs.release-version }}"
+          Compress-Archive -Path "$dist/*" -DestinationPath "no_english_mode-v$version.zip"
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
@@ -81,6 +92,4 @@ jobs:
           fail_on_unmatched_files: true
           generate_release_notes: true
           files: |
-            target/release/no_english_mode.exe
-            assets/copy_to_startup.bat
-            README.md
+            no_english_mode-v${{ steps.version.outputs.release-version }}.zip
