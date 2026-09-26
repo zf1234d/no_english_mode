@@ -40,8 +40,8 @@ fn ime_force_worker(rx: mpsc::Receiver<isize>) {
                 SendMessageW(
                     ime_hwnd,
                     WM_IME_CONTROL,
-                    WPARAM(IMC_SETCONVERSIONMODE as usize),
-                    LPARAM(1025), // Chinese
+                    Some(WPARAM(IMC_SETCONVERSIONMODE as usize)),
+                    Some(LPARAM(1025)), // Chinese
                 );
             }
             // Allow the IME to process before the next attempt.
@@ -84,7 +84,7 @@ fn add_tray_icon(hwnd: HWND) -> windows::core::Result<()> {
         uFlags: NIF_MESSAGE | NIF_ICON | NIF_TIP,
         hWnd: hwnd,
         uCallbackMessage: NOTIFYICONMESSAGE,
-        hIcon: unsafe { LoadIconW(h_instance, PCWSTR(IDI_ICON1 as *const u16))? }, // Load the app icon
+        hIcon: unsafe { LoadIconW(Some(HINSTANCE(h_instance.0)), PCWSTR(IDI_ICON1 as *const u16))? }, // Load the app icon
         szTip: [0; 128],                                                           // Tooltip text
         ..Default::default()
     };
@@ -131,10 +131,10 @@ unsafe extern "system" fn window_proc(
                 SetForegroundWindow(hwnd);
 
                 // Track the popup menu at the cursor position
-                TrackPopupMenu(hmenu, TPM_RIGHTBUTTON, point.x, point.y, 0, hwnd, None);
+                TrackPopupMenu(hmenu, TPM_RIGHTBUTTON, point.x, point.y, Some(0), hwnd, None);
 
                 // Required to make sure the menu closes on time
-                let _ = PostMessageW(hwnd, WM_NULL, WPARAM(0), LPARAM(0));
+                let _ = PostMessageW(Some(hwnd), WM_NULL, WPARAM(0), LPARAM(0));
             }
             _ => {}
         },
@@ -185,7 +185,7 @@ fn main() -> windows::core::Result<()> {
         let class_atom = RegisterClassW(&wc);
         if class_atom == 0 {
             // Handle error
-            return Err(windows::core::Error::from_win32());
+            return Err(windows::core::Error::from_thread());
         }
 
         // Create the hidden window
@@ -200,13 +200,13 @@ fn main() -> windows::core::Result<()> {
             CW_USEDEFAULT,
             None,
             None,
-            instance,
+            Some(HINSTANCE(instance.0)),
             None,
         );
 
         if hwnd.as_ref().map_or(true, |h| h.0.is_null()) {
             // Handle error
-            return Err(windows::core::Error::from_win32());
+            return Err(windows::core::Error::from_thread());
         }
 
         // Add the tray icon using 'hwnd'
@@ -232,12 +232,12 @@ fn main() -> windows::core::Result<()> {
         if hook.0 == std::ptr::null_mut() {
             // Handle the error if the hook is not set
             println!("Failed to set hook!");
-            return Err(Error::from_win32());
+            return Err(Error::from_thread());
         }
 
         // Message loop
         let mut message = MSG::default();
-        while GetMessageW(&mut message, HWND(std::ptr::null_mut()), 0, 0).into() {
+        while GetMessageW(&mut message, Some(HWND(std::ptr::null_mut())), 0, 0).into() {
             TranslateMessage(&message);
             DispatchMessageW(&message);
         }
