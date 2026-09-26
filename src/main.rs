@@ -38,9 +38,11 @@ fn ime_force_worker(rx: mpsc::Receiver<isize>) {
         // Skip if the IME is already in Chinese mode.
         let himc = unsafe { ImmGetContext(hwnd) };
         if !himc.0.is_null() {
-            let mut conversion = 0u32;
-            let mut sentence = 0u32;
-            let ok = unsafe { ImmGetConversionStatus(himc, &mut conversion, &mut sentence) };
+            let mut conversion: IME_CONVERSION_MODE = 0;
+            let mut sentence: IME_SENTENCE_MODE = 0;
+            let ok = unsafe {
+                ImmGetConversionStatus(himc, Some(&mut conversion), Some(&mut sentence))
+            };
             unsafe { ImmReleaseContext(hwnd, himc) };
             if ok.as_bool() && (conversion & 0x1) != 0 {
                 continue;
