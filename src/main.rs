@@ -43,7 +43,7 @@ fn ime_force_worker(rx: mpsc::Receiver<isize>) {
             let ok = unsafe {
                 ImmGetConversionStatus(himc, Some(&mut conversion), Some(&mut sentence))
             };
-            unsafe { ImmReleaseContext(hwnd, himc) };
+            unsafe { let _ = ImmReleaseContext(hwnd, himc); };
             if ok.as_bool() && (conversion.0 & 0x1) != 0 {
                 continue;
             }
@@ -112,7 +112,10 @@ fn add_tray_icon(hwnd: HWND) -> windows::core::Result<()> {
         }
 
         // Add the icon
-        Shell_NotifyIconW(NIM_ADD, &mut nid);
+        let added = Shell_NotifyIconW(NIM_ADD, &mut nid);
+        if !added.as_bool() {
+            return Err(windows::core::Error::from_thread());
+        }
     }
     Ok(())
 }
@@ -143,10 +146,10 @@ unsafe extern "system" fn window_proc(
                 );
 
                 // Set the foreground window to the current window to ensure the menu closes properly
-                SetForegroundWindow(hwnd);
+                let _ = SetForegroundWindow(hwnd);
 
                 // Track the popup menu at the cursor position
-                TrackPopupMenu(hmenu, TPM_RIGHTBUTTON, point.x, point.y, Some(0), hwnd, None);
+                let _ = TrackPopupMenu(hmenu, TPM_RIGHTBUTTON, point.x, point.y, Some(0), hwnd, None);
 
                 // Required to make sure the menu closes on time
                 let _ = PostMessageW(Some(hwnd), WM_NULL, WPARAM(0), LPARAM(0));
@@ -253,12 +256,12 @@ fn main() -> windows::core::Result<()> {
         // Message loop
         let mut message = MSG::default();
         while GetMessageW(&mut message, Some(HWND(std::ptr::null_mut())), 0, 0).into() {
-            TranslateMessage(&message);
-            DispatchMessageW(&message);
+            let _ = TranslateMessage(&message);
+            let _ = DispatchMessageW(&message);
         }
 
         // Unhook before exit
-        UnhookWinEvent(hook);
+        let _ = UnhookWinEvent(hook);
     }
 
     Ok(())
