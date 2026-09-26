@@ -8,7 +8,7 @@ build = "build.rs"
 [dependencies]
 
 [dependencies.windows]
-version = "0.58"
+version = "0.62"
 features = [
     "Data_Xml_Dom",
     "Win32_Foundation",
