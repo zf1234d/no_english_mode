@@ -1,6 +1,10 @@
 #![windows_subsystem = "windows"]
 
-use std::{thread, time::Duration};
+use std::{
+    sync::{mpsc, OnceLock},
+    thread,
+    time::Duration,
+};
 
 use windows::{
     core::*,
@@ -15,6 +19,36 @@ use windows::{
         },
     },
 };
+
+// Channel used to hand focus events off to the background IME worker,
+// so the hook callback never blocks the message loop. HWND is a raw pointer
+// and isn't Send/Sync, so we pass the raw handle value instead.
+static FOCUS_SENDER: OnceLock<mpsc::Sender<isize>> = OnceLock::new();
+
+// Force the IME back to Chinese mode in a background thread. A single
+// SendMessageW can be lost if the IME hasn't attached to the newly focused
+// window yet, so we wait for it to settle and then retry a few times.
+fn ime_force_worker(rx: mpsc::Receiver<isize>) {
+    while let Ok(hwnd_value) = rx.recv() {
+        // Give the IME time to attach to the newly focused window.
+        thread::sleep(Duration::from_millis(50));
+
+        let hwnd = HWND(hwnd_value as *mut std::ffi::c_void);
+        let ime_hwnd = unsafe { ImmGetDefaultIMEWnd(hwnd) };
+        for _ in 0..5 {
+            unsafe {
+                SendMessageW(
+                    ime_hwnd,
+                    WM_IME_CONTROL,
+                    WPARAM(IMC_SETCONVERSIONMODE as usize),
+                    LPARAM(1025), // Chinese
+                );
+            }
+            // Allow the IME to process before the next attempt.
+            thread::sleep(Duration::from_millis(20));
+        }
+    }
+}
 
 unsafe extern "system" fn event_hook_callback(
     _h_win_event_hook: HWINEVENTHOOK,
@@ -33,18 +67,8 @@ unsafe extern "system" fn event_hook_callback(
 
     // Check if the current IME status matches Chinese (0x804)~
     if ((hkl.0 as u32 & 0xffff) == 0x804) && (hwnd.0 != std::ptr::null_mut()) {
-        // Get the ime window handle
-        let ime_hwnd = ImmGetDefaultIMEWnd(hwnd);
-        // Switch the IME state
-        println!("Chinese input method detected, forcing Chinese mode.");
-        // Sometimes the message will miss if we don't sleep for a little while.
-        thread::sleep(Duration::from_millis(50));
-        SendMessageW(
-            ime_hwnd,
-            WM_IME_CONTROL,
-            WPARAM(IMC_SETCONVERSIONMODE as usize),
-            LPARAM(1025), // Chinese
-        );
+        // Hand off to the worker instead of blocking the message loop here.
+        let _ = FOCUS_SENDER.get().map(|tx| tx.send(hwnd.0 as isize));
     }
 }
 
@@ -187,6 +211,11 @@ fn main() -> windows::core::Result<()> {
 
         // Add the tray icon using 'hwnd'
         add_tray_icon(hwnd.unwrap())?;
+
+        // Start the background IME worker before installing the hook.
+        let (focus_tx, focus_rx) = mpsc::channel();
+        let _ = FOCUS_SENDER.set(focus_tx);
+        thread::spawn(|| ime_force_worker(focus_rx));
 
         // Set the hook
         let hook = SetWinEventHook(
