@@ -235,8 +235,8 @@ fn main() -> windows::core::Result<()> {
         let _ = FOCUS_SENDER.set(focus_tx);
         thread::spawn(|| ime_force_worker(focus_rx));
 
-        // Set the hook
-        let hook = SetWinEventHook(
+        // Set the hooks
+        let hook_focus = SetWinEventHook(
             EVENT_OBJECT_FOCUS,
             EVENT_OBJECT_FOCUS,
             None, // Handle to the DLL with the callback function, None for the current process
@@ -246,9 +246,18 @@ fn main() -> windows::core::Result<()> {
             WINEVENT_OUTOFCONTEXT,
         );
 
-        // Check if the hook was set successfully
-        if hook.0 == std::ptr::null_mut() {
-            // Handle the error if the hook is not set
+        let hook_ime = SetWinEventHook(
+            EVENT_OBJECT_IME_SHOW,
+            EVENT_OBJECT_IME_CHANGE,
+            None,
+            Some(event_hook_callback),
+            0,
+            0,
+            WINEVENT_OUTOFCONTEXT,
+        );
+
+        // Check if the hooks were set successfully
+        if hook_focus.0 == std::ptr::null_mut() || hook_ime.0 == std::ptr::null_mut() {
             println!("Failed to set hook!");
             return Err(Error::from_thread());
         }
@@ -261,7 +270,8 @@ fn main() -> windows::core::Result<()> {
         }
 
         // Unhook before exit
-        let _ = UnhookWinEvent(hook);
+        let _ = UnhookWinEvent(hook_focus);
+        let _ = UnhookWinEvent(hook_ime);
     }
 
     Ok(())
