@@ -6,7 +6,7 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>NoEnglishMode</RootNamespace>
     <AssemblyName>no_english_mode</AssemblyName>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Nullable>enable</Nullable>
     <ApplicationIcon>assets\app.ico</ApplicationIcon>
   </PropertyGroup>
