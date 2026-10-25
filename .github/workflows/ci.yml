@@ -45,7 +45,7 @@ jobs:
         run: |
           $dist = 'dist'
           New-Item -ItemType Directory -Force -Path $dist | Out-Null
-          Copy-Item 'no_english_mode/bin/Release/net48/publish/no_english_mode.exe' $dist
+          Copy-Item 'bin/Release/net48/publish/no_english_mode.exe' $dist
           $version = "${{ steps.version.outputs.release-version }}"
           Compress-Archive -Path "$dist/*" -DestinationPath "no_english_mode-v$version.zip"
 
@@ -53,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: no_english_mode
-          path: no_english_mode/bin/Release/net48/publish/no_english_mode.exe
+          path: bin/Release/net48/publish/no_english_mode.exe
 
       - name: Create Release
         if: "${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'chore: bump version to ') }}"
