@@ -1,0 +1,8 @@
+# .NET build output
+bin/
+obj/
+*.user
+
+# Legacy Rust output (pre-2.0)
+target/
+debug/
