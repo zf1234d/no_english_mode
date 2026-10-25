@@ -7,6 +7,12 @@
     <RootNamespace>NoEnglishMode</RootNamespace>
     <AssemblyName>no_english_mode</AssemblyName>
     <Version>1.0.1</Version>
+    <AssemblyTitle>NoEnglishMode</AssemblyTitle>
+    <Product>NoEnglishMode</Product>
+    <Description>保持微软拼音输入法处于中文模式</Description>
+    <Company>zf1234d</Company>
+    <Copyright>Copyright © 2026 zf1234d</Copyright>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <Nullable>enable</Nullable>
     <ApplicationIcon>assets\app.ico</ApplicationIcon>
   </PropertyGroup>

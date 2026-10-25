@@ -1,4 +1,4 @@
-# no_english_mode · NO English Mode!
+# NO English Mode
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?style=for-the-badge)](https://github.com/zf1234d/no_english_mode)
 [![.NET Framework](https://img.shields.io/badge/.NET%20Framework-4.8-512BD4?style=for-the-badge)](https://github.com/zf1234d/no_english_mode)
