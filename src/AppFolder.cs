@@ -10,6 +10,9 @@ namespace NoEnglishMode;
 // launches are allowed: the existing log.txt marks the folder as adopted.
 internal static class AppFolder
 {
+    // files shipped in the release archive next to the exe
+    private static readonly string[] BundledFiles = { "README.md", "LICENSE" };
+
     public static string ExePath => typeof(AppFolder).Assembly.Location;
 
     public static string ExeDirectory
@@ -37,7 +40,8 @@ internal static class AppFolder
                 string name = Path.GetFileName(entry);
                 if (string.Equals(name, exeName, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(name, Logger.LogFileName, StringComparison.OrdinalIgnoreCase) ||
-                    name.StartsWith(ownPrefix, StringComparison.OrdinalIgnoreCase))
+                    name.StartsWith(ownPrefix, StringComparison.OrdinalIgnoreCase) ||
+                    Array.Exists(BundledFiles, f => string.Equals(name, f, StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }

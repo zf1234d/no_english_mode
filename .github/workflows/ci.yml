@@ -46,6 +46,8 @@ jobs:
           $dist = 'dist'
           New-Item -ItemType Directory -Force -Path $dist | Out-Null
           Copy-Item 'bin/Release/net48/publish/no_english_mode.exe' $dist
+          Copy-Item 'README.md' $dist
+          Copy-Item 'LICENSE' $dist
           $version = "${{ steps.version.outputs.release-version }}"
           Compress-Archive -Path "$dist/*" -DestinationPath "no_english_mode-v$version.zip"
 
